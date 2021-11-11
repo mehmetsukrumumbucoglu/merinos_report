@@ -85,6 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late PullToRefreshController pullToRefreshController;
   String url = "";
+  final String asdf = "asdfg";
   double progress = 0;
   final urlController = TextEditingController();
 
@@ -135,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Erdemoğlu Holding Rapor")),
+      appBar: AppBar(title: Text("Erdemoğlu Holding Raporu")),
       body: SafeArea(
           child: Column(children: <Widget>[
         Expanded(
