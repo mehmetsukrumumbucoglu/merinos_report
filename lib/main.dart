@@ -198,6 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     String _localPath = (await findLocalPath()) +
                         Platform.pathSeparator +
                         'Merinos Raporları';
+
                     final savedDir = Directory(_localPath);
                     bool hasExisted = await savedDir.exists();
                     if (!hasExisted) {
@@ -211,6 +212,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         showNotification: true,
                         openFileFromNotification: true,
                         saveInPublicStorage: true);
+
+                    print("id======> $id");
                   } else {
                     print('Permission Denied');
                   }
@@ -266,12 +269,14 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 Future<String> findLocalPath() async {
-  final directory =
-      // (MyGlobals.platform == "android")
-      // ?
-      await getExternalStorageDirectory();
-  // : await getApplicationDocumentsDirectory();
-  return directory!.path;
+  var externalDir;
+  if (Platform.isIOS) {
+    // Platform is imported from 'dart:io' package
+    externalDir = await getTemporaryDirectory();
+  } else if (Platform.isAndroid) {
+    externalDir = await getExternalStorageDirectory();
+  }
+  return externalDir!.path;
 }
 
 class Splash extends StatelessWidget {
