@@ -111,7 +111,12 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       onRefresh: () async {
         if (Platform.isAndroid) {
-          webViewController?.reload();
+          if (webViewController != null) {
+            Uri? url = await webViewController?.getUrl();
+            String strUrl = url.toString();
+            webViewController!.loadUrl(
+                urlRequest: URLRequest(url: Uri.parse(strUrl.split('#')[0])));
+          }
         } else if (Platform.isIOS) {
           webViewController?.loadUrl(
               urlRequest: URLRequest(url: await webViewController?.getUrl()));
@@ -136,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Erdemoğlu Holding Raporu")),
+      appBar: AppBar(title: Text("Erdemoğlu Holding Rapor")),
       body: SafeArea(
           child: Column(children: <Widget>[
         Expanded(
@@ -306,6 +311,6 @@ class Init {
     // This is where you can initialize the resources needed by your app while
     // the splash screen is displayed.  Remove the following example because
     // delaying the user experience is a bad design practice!
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 2));
   }
 }
