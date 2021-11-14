@@ -10,6 +10,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info/device_info.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +69,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey webViewKey = GlobalKey();
+  late bool _isLoading;
+  late bool _permissionReady;
   ReceivePort _port = ReceivePort();
   InAppWebViewController? webViewController;
   InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
@@ -92,17 +95,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-
-    IsolateNameServer.registerPortWithName(
-        _port.sendPort, 'downloader_send_port');
-    _port.listen((dynamic data) {
-      String id = data[0];
-      DownloadTaskStatus status = data[1];
-      int progress = data[2];
-      setState(() {});
-    });
-
+    _bindBackgroundIsolate();
     FlutterDownloader.registerCallback(downloadCallback);
+    _isLoading = true;
+    _permissionReady = false;
 
     pullToRefreshController = PullToRefreshController(
       options: PullToRefreshOptions(
@@ -127,7 +123,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    IsolateNameServer.removePortNameMapping('downloader_send_port');
+    _unbindBackgroundIsolate();
     super.dispose();
   }
 
@@ -197,25 +193,32 @@ class _MyHomePageState extends State<MyHomePage> {
                   print("onConsoleMessage -> $consoleMessage");
                 },
                 onDownloadStart: (controller, url) async {
+                  print("=====>DOWNLOAD A BASILDI...");
+                  print("=====>İZİN İSTENECEK...");
                   final status = await Permission.storage.request();
-
+                  print("=====>İZİN İSTENDİ...");
                   if (status.isGranted) {
+                    print("=====>İZİN OKEY...");
                     String _localPath = (await findLocalPath()) +
                         Platform.pathSeparator +
                         'Merinos Raporları';
+                    print("=====>LOCAL PATH ------ : $_localPath");
                     final savedDir = Directory(_localPath);
+                    print("=====>SAVE DİRECTORY... ------ : $_localPath");
                     bool hasExisted = await savedDir.exists();
                     if (!hasExisted) {
+                      print("=====>DİRECTORY YOK YARATILACAK... ----");
                       savedDir.create();
                     }
 
-                    print("PATH======> $_localPath");
+                    print("=====>DOWNLOAD ÇALIŞTIRILACAK... -----");
                     final id = await FlutterDownloader.enqueue(
                         url: url.toString(),
                         savedDir: _localPath,
                         showNotification: true,
                         openFileFromNotification: true,
                         saveInPublicStorage: true);
+                    print("=====>DOWNLOAD ÇALIŞTIRILDI... -----");
                   } else {
                     print('Permission Denied');
                   }
@@ -267,6 +270,26 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ]),
     );
+  }
+
+  void _unbindBackgroundIsolate() {
+    IsolateNameServer.removePortNameMapping('downloader_send_port');
+  }
+
+  void _bindBackgroundIsolate() {
+    bool isSuccess = IsolateNameServer.registerPortWithName(
+        _port.sendPort, 'downloader_send_port');
+    if (!isSuccess) {
+      _unbindBackgroundIsolate();
+      _bindBackgroundIsolate();
+      return;
+    }
+    _port.listen((dynamic data) {
+      String id = data[0];
+      DownloadTaskStatus status = data[1];
+      int progress = data[2];
+      setState(() {});
+    });
   }
 }
 
