@@ -10,7 +10,6 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:device_info/device_info.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,6 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey webViewKey = GlobalKey();
   late bool _isLoading;
   late bool _permissionReady;
+
   ReceivePort _port = ReceivePort();
   InAppWebViewController? webViewController;
   InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
@@ -96,6 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _bindBackgroundIsolate();
+
     FlutterDownloader.registerCallback(downloadCallback);
     _isLoading = true;
     _permissionReady = false;
@@ -294,12 +295,14 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 Future<String> findLocalPath() async {
-  final directory =
-      // (MyGlobals.platform == "android")
-      // ?
-      await getExternalStorageDirectory();
-  // : await getApplicationDocumentsDirectory();
-  return directory!.path;
+  var externalDir;
+  if (Platform.isIOS) {
+    // Platform is imported from 'dart:io' package
+    externalDir = await getTemporaryDirectory();
+  } else if (Platform.isAndroid) {
+    externalDir = await getExternalStorageDirectory();
+  }
+  return externalDir!.path;
 }
 
 class Splash extends StatelessWidget {
